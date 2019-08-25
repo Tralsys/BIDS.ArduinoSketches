@@ -23,11 +23,11 @@ c_BIDS * BIDS;
 #define PS_BR_RELEAS 3
 #define PS_BROKEN 4
 
-#define PS_PAT_OCCUR_PNL 12
-#define PS_PAT_APPRO_PNL 13
-#define PS_BR_BEHAVE_PNL 14
-#define PS_BR_RELEAS_PNL 15
-#define PS_BROKEN_PNL -1
+#define PS_PAT_OCCUR_PNL 13
+#define PS_PAT_APPRO_PNL 14
+#define PS_BR_BEHAVE_PNL 15
+#define PS_BR_RELEAS_PNL -1//undefined
+#define PS_BROKEN_PNL -1//undefined
 
 SPISettings spiSettings = SPISettings(8000000, MSBFIRST, SPI_MODE0);
 
@@ -43,7 +43,7 @@ void setup() {
   BIDS->DataGet("A", "P", PS_PAT_OCCUR_PNL);
   BIDS->DataGet("A", "P", PS_PAT_APPRO_PNL);
   BIDS->DataGet("A", "P", PS_BR_BEHAVE_PNL);
-  BIDS->DataGet("A", "P", PS_BR_RELEAS_PNL);
+  //BIDS->DataGet("A", "P", PS_BR_RELEAS_PNL);
   //BIDS->DataGet("A","P",PS_BROKEN_PNL);
 }
 
@@ -67,14 +67,14 @@ void loop() {
         LEDMOD_print[PS_BR_BEHAVE] = (byte)data;
         isChanged = true;
       }
-      if (s.startsWith("TRIP" + String(PS_BR_RELEAS_PNL))) {
+      /*if (s.startsWith("TRIP" + String(PS_BR_RELEAS_PNL))) {
         LEDMOD_print[PS_BR_RELEAS] = (byte)data;
         isChanged = true;
       }
       if (s.startsWith("TRIP" + String(PS_BROKEN_PNL))) {
         LEDMOD_print[PS_BROKEN] = (byte)data;
         isChanged = true;
-      }
+      }*/
     }
   }
   if (isChanged) {
