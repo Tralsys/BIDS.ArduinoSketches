@@ -10,12 +10,16 @@ class c_BIDS {
   public:
     c_BIDS();
     c_BIDS(int);
-    c_BIDS(int, int);
+    c_BIDS(int, long);
 
     //int DataGet(byte*, byte*, int);
     float DataGet(String, String, int);
     float DataGet(String, int);
+    int DataGetInt(String, int);
+    int DataGetInt(String, String, int);
+    String DataGet(int&, String);
     String DataGet(float&, String);
+    String DataGet(String&, String);
 
     int Version;
 
@@ -27,7 +31,8 @@ class c_BIDS {
 
     private:
       float SerialGet(String);
-      int VersionCheck(int, int);
+      void SerialSender(String);
+      int VersionCheck(int, long);
   };
 
 #endif //_BIDS_
