@@ -8,9 +8,16 @@
 #define LCDMODE 1 //for debugging
 
 #ifdef LCDMODE 1
+
 #include <LiquidCrystal.h>
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
+
 #else
-#include "SPI.h"
+
+#define DATA_PIN 2
+#define CLOCK_PIN 3
+#define LATCH_PIN 4
+
 #endif
 
 #include "BIDS.h"
@@ -37,12 +44,6 @@ c_BIDS * BIDS;
 #define CURRENT_SPED_PNL 18
 #define PS_PAT_SPEED_PNL 19
 
-#ifdef LCDMODE 1
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-#else
-SPISettings spiSettings = SPISettings(8000000, MSBFIRST, SPI_MODE0);
-#endif
-
 byte LEDMOD_print[5];
 bool LEDMOD_TF[5];
 byte LEDMOD_tf = 0;
@@ -55,10 +56,29 @@ void setup() {
   lcd.setCursor(0, 1);
   lcd.print("ATS-Ps Disp");
 #else
-  SPI.begin();
-  SPI.beginTransaction(spiSettings);
+  pinMode(DATA_PIN, OUTPUT);
+  pinMode(CLOCK_PIN, OUTPUT);
+  pinMode(LATCH_PIN, OUTPUT);
 #endif
-  BIDS = new c_BIDS(202, 115200);
+
+  BIDS = new c_BIDS(202, 115200);//BIDS Start
+#ifndef LCDMODE 1
+  #pragma region FuncTest
+  Serial.print("FunctionTest Start\n");
+  for (byte i = 0; i < 5 * 5; i++) {
+    LEDControl(i << 3, false);
+    SPIPrinter(LEDMOD_print, 5);
+    delay(250);
+    LEDControl(i << 3, true);
+    SPIPrinter(LEDMOD_print, 5);
+    delay(250);
+  }
+  LEDControl(0x00, false);
+  SPIPrinter(LEDMOD_print, 5);
+  Serial.print("FunctionTest Complete\n");
+  #pragma endregion
+#endif
+  //AutoSend Setting Start
   BIDS->DataGet("A", "P", PS_PAT_OCCUR_PNL);
   BIDS->DataGet("A", "P", PS_PAT_APPRO_PNL);
   BIDS->DataGet("A", "P", PS_BR_BEHAVE_PNL);
@@ -66,6 +86,7 @@ void setup() {
   //BIDS->DataGet( "A", "P",PS_BROKEN_PNL);
   BIDS->DataGet("A", "P", CURRENT_SPED_PNL);
   BIDS->DataGet("A", "P", PS_PAT_SPEED_PNL);
+  //AutoSend Setting End
 }
 
 int CurrentSpeedPNL = 0;
@@ -113,10 +134,11 @@ void loop() {
           case PS_PAT_SPEED_PNL:
             PatternSpeedPNL = i;
             break;
-
         }
       }
     }
+
+    //isChanged Judge
     for (int i = 0; i < 5; i++) {
       if (LEDMOD_TF[i] && (LEDMOD_print[i] == 0)) {
         LEDMOD_print[i] = 1;
@@ -145,10 +167,6 @@ void loop() {
   delay(WAIT_COUNT);
 }
 
-void LEDControl(byte Data, bool LED_isHalf) {
-  for (int i = 0; i < 5; i++)
-    LEDMOD_print[i] = LEDwriteNum(Data >> (7 - i), LED_isHalf);
-}
 
 void SPIPrinter(byte DataArr[], int Length) {
 #ifdef LCDMODE 1
@@ -173,11 +191,17 @@ void SPIPrinter(byte DataArr[], int Length) {
   }
   lcd.print("       ");
 #else
-  digitalWrite(SS, LOW);
+  digitalWrite(LATCH_PIN, LOW);
   for (int i = 0; i < 5; i++)
-    SPI.transfer(SPIPrinter[i]);
-  digitalWrite(SS, HIGH);
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, *DataArr[i]);
+  digitalWrite(LATCH_PIN, HIGH);
 #endif
+}
+
+
+void LEDControl(byte Data, bool LED_isHalf) {
+  for (int i = 0; i < 5; i++)
+    LEDMOD_print[i] = LEDwriteNum(Data >> (7 - i), LED_isHalf);
 }
 
 byte LEDwriteNum(byte Data, bool isHalf) {
@@ -185,6 +209,7 @@ byte LEDwriteNum(byte Data, bool isHalf) {
 }
 
 void LEDBarWriter(int CurrentSPD, int PatternSPD) {
+#ifdef LCDMODE 1
   String s = String(CurrentSPD);
   while (s.length() < 3)
     s = " " + s;
@@ -196,7 +221,7 @@ void LEDBarWriter(int CurrentSPD, int PatternSPD) {
     s = " " + s;
   lcd.print(s);
   lcd.print("        ");
-
+#endif
 }
 void PlayVoice(byte Num, bool isLighting) {
 
