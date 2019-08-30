@@ -15,9 +15,9 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 #else
 //ref : http://blog.davidecoppola.com/2013/08/using-a-shift-register-74hc595n-with-arduino/
-#define DATA_PIN 2  //74HC595 : DS(14)
-#define CLOCK_PIN 3 //74HC595 : SH_CP(11)
-#define LATCH_PIN 4 //74HC595 : ST_CP(12)
+#define DATA_PIN 11  //74HC595 : DS(14)
+#define CLOCK_PIN 13 //74HC595 : SH_CP(11)
+#define LATCH_PIN 10 //74HC595 : ST_CP(12)
 
 #endif
 
@@ -50,6 +50,9 @@ bool LEDMOD_TF[5];
 byte LEDMOD_tf = 0;
 bool led_isHalf = false;
 
+int CurrentSpeedPNL = 0;
+int PatternSpeedPNL = 0;
+
 void setup() {
 #if LCDMODE == 1
   lcd.begin(16, 2);
@@ -80,18 +83,15 @@ void setup() {
   #pragma endregion FuncTest
 #endif
   //AutoSend Setting Start
-  BIDS->DataGet("A", "P", PS_PAT_OCCUR_PNL);
-  BIDS->DataGet("A", "P", PS_PAT_APPRO_PNL);
-  BIDS->DataGet("A", "P", PS_BR_BEHAVE_PNL);
+  LEDMOD_TF[PS_PAT_OCCUR_PNL] = BIDS->DataGetInt("A", "P", PS_PAT_OCCUR_PNL) == 1;
+  LEDMOD_TF[PS_PAT_APPRO_PNL] = BIDS->DataGetInt("A", "P", PS_PAT_APPRO_PNL) == 1;
+  LEDMOD_TF[PS_BR_BEHAVE_PNL] = BIDS->DataGetInt("A", "P", PS_BR_BEHAVE_PNL) == 1;
   //BIDS->DataGet( "A", "P",PS_BR_RELEAS_PNL);
   //BIDS->DataGet( "A", "P",PS_BROKEN_PNL);
-  BIDS->DataGet("A", "P", CURRENT_SPED_PNL);
-  BIDS->DataGet("A", "P", PS_PAT_SPEED_PNL);
+  CurrentSpeedPNL = BIDS->DataGetInt("A", "P", CURRENT_SPED_PNL);
+  PatternSpeedPNL = BIDS->DataGetInt("A", "P", PS_PAT_SPEED_PNL);
   //AutoSend Setting End
 }
-
-int CurrentSpeedPNL = 0;
-int PatternSpeedPNL = 0;
 
 void loop() {
   int CurrentSpeedPNLrec = CurrentSpeedPNL;
@@ -138,16 +138,16 @@ void loop() {
         }
       }
     }
+  }
 
-    //isChanged Judge
-    for (int i = 0; i < 5; i++) {
-      if (LEDMOD_TF[i] && (LEDMOD_print[i] == 0)) {
-        LEDMOD_print[i] = 1;
-        isChanged = true;
-      } else if (!LEDMOD_TF[i] && (LEDMOD_print != 0)) {
-        LEDMOD_print[i] = 0;
-        isChanged = true;
-      }
+  //isChanged Judge
+  for (int i = 0; i < 5; i++) {
+    if (LEDMOD_TF[i] && (LEDMOD_print[i] == 0)) {
+      LEDMOD_print[i] = 1;
+      isChanged = true;
+    } else if (!LEDMOD_TF[i] && (LEDMOD_print != 0)) {
+      LEDMOD_print[i] = 0;
+      isChanged = true;
     }
   }
   if (CurrentSpeedPNL != CurrentSpeedPNLrec) isChanged = true;
@@ -193,7 +193,7 @@ void SPIPrinter(byte DataArr[], int Length) {
   lcd.print("       ");
 #else
   digitalWrite(LATCH_PIN, LOW);
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < Length; i++) {
     byte buf = DataArr[i];
     Serial.print("writing [" + String(i) + "] : " + String(buf) + "\n");
     shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, buf);
