@@ -31,11 +31,11 @@ c_BIDS * BIDS;
 #define WAIT_COUNT 50
 #define LIGHT_HALF_SW A0
 
-#define PS_PAT_OCCUR 0
-#define PS_PAT_APPRO 1
+#define PS_PAT_OCCUR 4
+#define PS_PAT_APPRO 3
 #define PS_BR_BEHAVE 2
-#define PS_BR_RELEAS 3
-#define PS_BROKEN 4
+#define PS_BR_RELEAS 1
+#define PS_BROKEN 0
 
 #define PS_PAT_OCCUR_PNL 13
 #define PS_PAT_APPRO_PNL 14
