@@ -5,18 +5,19 @@
 //Reference : https://garretlab.web.fc2.com/arduino/lab/7segment_led_with_shift_register/
 //ATSPI : Integrated ATS Plugin (by @AskED757001@twitter.com)
 
-#define LCDMODE 1 //for debugging
+//if you want to use LCD Keypad shield for debuging, set the number "1"
+#define LCDMODE 0
 
-#ifdef LCDMODE 1
+#if LCDMODE == 1
 
 #include <LiquidCrystal.h>
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 #else
-
-#define DATA_PIN 2
-#define CLOCK_PIN 3
-#define LATCH_PIN 4
+//ref : http://blog.davidecoppola.com/2013/08/using-a-shift-register-74hc595n-with-arduino/
+#define DATA_PIN 2  //74HC595 : DS(14)
+#define CLOCK_PIN 3 //74HC595 : SH_CP(11)
+#define LATCH_PIN 4 //74HC595 : ST_CP(12)
 
 #endif
 
@@ -50,7 +51,7 @@ byte LEDMOD_tf = 0;
 bool led_isHalf = false;
 
 void setup() {
-#ifdef LCDMODE 1
+#if LCDMODE == 1
   lcd.begin(16, 2);
   //lcd.clear();
   lcd.setCursor(0, 1);
@@ -62,7 +63,7 @@ void setup() {
 #endif
 
   BIDS = new c_BIDS(202, 115200);//BIDS Start
-#ifndef LCDMODE 1
+#if LCDMODE != 1
   #pragma region FuncTest
   Serial.print("FunctionTest Start\n");
   for (byte i = 0; i < 5 * 5; i++) {
@@ -76,7 +77,7 @@ void setup() {
   LEDControl(0x00, false);
   SPIPrinter(LEDMOD_print, 5);
   Serial.print("FunctionTest Complete\n");
-  #pragma endregion
+  #pragma endregion FuncTest
 #endif
   //AutoSend Setting Start
   BIDS->DataGet("A", "P", PS_PAT_OCCUR_PNL);
@@ -98,7 +99,7 @@ void loop() {
   bool isChanged = false;
 
   bool led_isHalf_rec = led_isHalf;
-#ifdef LCDMODE 1
+#if LCDMODE == 1
   int a0ar = analogRead(A0);
   if (500 < a0ar && a0ar < 750) {
     led_isHalf = !led_isHalf_rec;
@@ -160,7 +161,7 @@ void loop() {
     SPIPrinter(LEDMOD_print, 5);
     LEDBarWriter(CurrentSpeedPNL, PatternSpeedPNL);
 
-#ifdef PS_VOICE 1
+#if PS_VOICE == 1
 
 #endif
   }
@@ -169,7 +170,7 @@ void loop() {
 
 
 void SPIPrinter(byte DataArr[], int Length) {
-#ifdef LCDMODE 1
+#if LCDMODE == 1
   lcd.setCursor(0, 1);
   char c = 'F';
   for (int i = 0; i < Length; i++) {
@@ -192,16 +193,21 @@ void SPIPrinter(byte DataArr[], int Length) {
   lcd.print("       ");
 #else
   digitalWrite(LATCH_PIN, LOW);
-  for (int i = 0; i < 5; i++)
-    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, *DataArr[i]);
+  for (int i = 0; i < 5; i++) {
+    byte buf = DataArr[i];
+    Serial.print("writing [" + String(i) + "] : " + String(buf) + "\n");
+    shiftOut(DATA_PIN, CLOCK_PIN, MSBFIRST, buf);
+  }
   digitalWrite(LATCH_PIN, HIGH);
 #endif
 }
 
 
 void LEDControl(byte Data, bool LED_isHalf) {
-  for (int i = 0; i < 5; i++)
-    LEDMOD_print[i] = LEDwriteNum(Data >> (7 - i), LED_isHalf);
+  for (int i = 0; i < 5; i++) {
+    byte buf = Data;
+    LEDMOD_print[i] = LEDwriteNum(buf >> (7 - i), LED_isHalf);
+  }
 }
 
 byte LEDwriteNum(byte Data, bool isHalf) {
@@ -209,7 +215,7 @@ byte LEDwriteNum(byte Data, bool isHalf) {
 }
 
 void LEDBarWriter(int CurrentSPD, int PatternSPD) {
-#ifdef LCDMODE 1
+#if LCDMODE == 1
   String s = String(CurrentSPD);
   while (s.length() < 3)
     s = " " + s;
@@ -223,6 +229,6 @@ void LEDBarWriter(int CurrentSPD, int PatternSPD) {
   lcd.print("        ");
 #endif
 }
-void PlayVoice(byte Num, bool isLighting) {
+/*void PlayVoice(byte Num, bool isLighting) {
 
-}
+  }*/
