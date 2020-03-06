@@ -1,0 +1,7 @@
+{
+        "C_Cpp.default.includePath": [
+        "&{default}",
+        "${workspaceFolder}/**",
+        "C:\\Program Files (x86)\\Arduino\\**"
+    ]
+}
