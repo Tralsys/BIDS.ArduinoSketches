@@ -61,6 +61,10 @@ bool BIDS::RmvAutoSend(char type, int data_num)
     return IsFound;
 }
 
+bool BIDS::ASDataCheck()
+{
+}
+
 int BIDS::CmdSender(const char *cmd, char *ret, int retlen)
 {
     (*UsingSerial).println(cmd);

@@ -28,6 +28,7 @@ public:
     ~BIDS();
     bool AddAutoSend(char type, int data_num, void *Action);
     bool RmvAutoSend(char type, int data_num);
+    bool ASDataCheck();
 
     int CmdSender(const char *cmd, char *ret, int retlen);
     void CmdSender(const char *cmd, int *ret);
