@@ -7,11 +7,14 @@
 #ifndef AS_MAX
 #define AS_MAX 100
 #endif
+
+#define LAST_CMD_LEN 64
+
 typedef struct ASAction
 {
     char type;
     int data_num;
-    void *Action;
+    void (*Action)(int valI, double valF);
 } ASAction;
 
 class BIDS
@@ -22,19 +25,24 @@ private:
     int Actions_MAX = AS_MAX;
     int Actions_count = 0;
     Stream *UsingSerial;
+    const int LastCMD_len = LAST_CMD_LEN;
 
 public:
+    char LastCMD[LAST_CMD_LEN];
+
     BIDS(Stream *ser);
     ~BIDS();
-    bool AddAutoSend(char type, int data_num, void *Action);
+    bool AddAutoSend(char type, int data_num, void (*Action)(int valI, double valF));
+    bool AddAutoSend(ASAction asa);
     bool RmvAutoSend(char type, int data_num);
-    bool ASDataCheck();
+    bool RmvAutoSend(ASAction asa);
+    bool ASDataCheck(bool *NonASCMDGot);
 
     int CmdSender(const char *cmd, char *ret, int retlen);
-    void CmdSender(const char *cmd, int *ret);
-    void CmdSender(const char *cmd, float *ret);
-    int CmdSenderInt(const char *cmd);
-    float CmdSenderFloat(const char *cmd);
+    bool CmdSender(const char *cmd, int *ret);
+    bool CmdSender(const char *cmd, double *ret);
+    int CmdSenderI(const char *cmd);
+    double CmdSenderF(const char *cmd);
 
     bool IsEnable();
 };
