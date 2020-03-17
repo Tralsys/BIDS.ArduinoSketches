@@ -3,23 +3,24 @@
 //Copyright 2020 Tetsu Otter
 #ifndef TR_BIDS_LIB_H
 #define TR_BIDS_LIB_H
+#include <Arduino.h>
 
 #ifndef AS_MAX
 #define AS_MAX 100
 #endif
 
 #define LAST_CMD_LEN 64
-
+typedef void (*AS_OnDataGot)(int, double);
 typedef struct ASAction
 {
-    char type;
-    int data_num;
-    void (*Action)(int valI, double valF);
+  char type;
+  int data_num;
+  AS_OnDataGot action;
 } ASAction;
 
 class BIDS
 {
-private:
+  private:
     bool isEnable = false;
     ASAction ASActions[AS_MAX];
     int Actions_MAX = AS_MAX;
@@ -27,14 +28,14 @@ private:
     Stream *UsingSerial;
     const int LastCMD_len = LAST_CMD_LEN;
 
-public:
+  public:
     char LastCMD[LAST_CMD_LEN];
 
     BIDS(Stream *ser);
     ~BIDS();
-    bool AddAutoSend(char type, int data_num, void (*Action)(int valI, double valF));
+    bool AddAutoSend(char type, int data_num, AS_OnDataGot act);
     bool AddAutoSend(ASAction asa);
-    bool RmvAutoSend(char type, int data_num);
+    bool RmvAutoSend(char type, int data_num,AS_OnDataGot act);
     bool RmvAutoSend(ASAction asa);
     bool ASDataCheck(bool *NonASCMDGot);
 

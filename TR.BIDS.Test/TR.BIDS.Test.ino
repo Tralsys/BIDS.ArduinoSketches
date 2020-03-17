@@ -5,13 +5,15 @@
 //This sketch needs Arduino Keypad Shield.
 //****************************************
 
-#include "TR.BIDS.lib.h"
+#include "TR.BIDS.libs.h"
 #include <Arduino.h>
+#include <stdio.h>
 #include <LiquidCrystal.h>
 #include "TR.BIDS.Test.defs.h"
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
-bool IsASMode = false;
+bool IsASMode = true;
+bool IsASModeRec = false;
 HardwareSerial hs;
 short BtnVals[9];
 bool Pushed = false;
@@ -36,7 +38,10 @@ void loop()
 {
   CheckBTN();
   ModeDisp();
+  BIDSCtrlAS();
+  BIDSCtrlCR();
   ModeRec = ModeNum;
+  IsASModeRec = IsASMode;
 }
 const int Threshold_Zero = 10;
 const int Val_AVE_Sel = 0;
@@ -80,7 +85,20 @@ KeypadS_Keys CheckBtn(int val)
     return KeypadS_Keys::Sel;
   return KeypadS_Keys::No;
 }
-void BIDSCtrl()
+void BIDSCtrlAS()
+{
+  if (IsASMode != IsASModeRec && !IsASMode)
+  {
+    RmvASSetting(ModeNum);
+    return;
+  }
+}
+void BIDSCtrlCR()
+{
+  if (IsASMode)
+    return;
+}
+void RmvASSetting(BIDSEls RmvEls)
 {
 }
 void ModeDisp()
@@ -159,6 +177,23 @@ void ModeDisp()
   }
 }
 
+void ValuePrinterI(int v1, double v2)
+{
+  char c[6];
+
+  snprintf(c, 6, "%d", v1);
+
+  lcdPrinter(10, 0, c);
+}
+void ValuePrinterF(int v1, double v2)
+{
+  char c[6];
+
+  snprintf(c, 6, "%ld", v2);
+
+  lcdPrinter(10, 0, c);
+}
+
 const int LED_DELAY_TIME = 100;
 void ErrorLED(unsigned char ec)
 {
@@ -192,7 +227,7 @@ void ErrorLED(unsigned char ec)
 }
 void lcdPrinter(int c, int r, const char *s)
 {
-  lcd.setCursor(r, c);
+  lcd.setCursor(c, r);
   lcd.print(s);
 }
 void lcdPrinter(const char *s)
@@ -201,7 +236,7 @@ void lcdPrinter(const char *s)
 }
 void lcdPrinter(int c, int r, String s)
 {
-  lcd.setCursor(r, c);
+  lcd.setCursor(c, r);
   lcd.print(s);
 }
 void ZeroFill(char *c, int len)
