@@ -10,13 +10,14 @@
 #include <stdio.h>
 #include <LiquidCrystal.h>
 #include "TR.BIDS.Test.defs.h"
+#include "UFunc.h"
 
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 bool IsASMode = true;
 bool IsASModeRec = false;
+int OptNum = 0;
+int OptNum_MAX = 0;
 HardwareSerial hs;
-short BtnVals[9];
-bool Pushed = false;
 BIDS bids = BIDS(&hs);
 BIDSEls ModeNum = BSMD_IS_ENABLE;
 BIDSEls ModeRec = None;
@@ -28,7 +29,7 @@ void setup()
   lcdPrinter(0, 1, "init...");
   hs.begin(230400);
   while (!hs)
-    ;
+    delay(1);
   lcdPrinter(0, 1, "serial began");
   delay(500);
   lcd.clear();
@@ -38,39 +39,49 @@ void loop()
 {
   CheckBTN();
   ModeDisp();
-  BIDSCtrlAS();
-  BIDSCtrlCR();
+  BIDSCtrlAS(); //AutoSend
+  BIDSCtrlCR(); //Call-Response
   ModeRec = ModeNum;
   IsASModeRec = IsASMode;
 }
 const int Threshold_Zero = 10;
+KeypadS_Keys KeyStateRec = KeypadS_Keys::No;
+void CheckBTN()
+{
+  KeypadS_Keys CurKeyState = CheckBtn(analogRead(A0));
+  if (KeyStateRec != CurKeyState && CurKeyState == KeypadS_Keys::No) //OnKeyReleased
+  {
+    switch (KeyStateRec)
+    {
+    case KeypadS_Keys::Sel:
+      IsASMode = !IsASMode;
+      break;
+    case KeypadS_Keys::L: //DataType Ctrl
+      if (ModeNum > BIDSEls::BSMD_IS_ENABLE)
+        ModeNum = (BIDSEls)((int)ModeNum - 1);
+      break;
+    case KeypadS_Keys::D: //OptNum Ctrl
+      if (OptNum > 0)
+        OptNum--;
+      break;
+    case KeypadS_Keys::U: //OptNum Ctrl
+      if (OptNum < OptNum_MAX)
+        OptNum++;
+      break;
+    case KeypadS_Keys::R: //DataType Ctrl
+      if (ModeNum < BIDSEls::CTRL_BTN)
+        ModeNum = (BIDSEls)((int)ModeNum + 1);
+      break;
+    }
+  }
+
+  KeyStateRec = CurKeyState;
+}
 const int Val_AVE_Sel = 0;
 const int Val_AVE_L = 0;
 const int Val_AVE_D = 0;
 const int Val_AVE_U = 0;
 const int Val_AVE_R = 0;
-void CheckBTN()
-{
-  int cval = analogRead(A0);
-  if (cval < Threshold_Zero)
-  {
-    if (!Pushed)
-      return;
-    switch (CheckBtn(0))
-    {
-    case KeypadS_Keys::Sel:
-      break;
-    case KeypadS_Keys::L:
-      break;
-    case KeypadS_Keys::D:
-      break;
-    case KeypadS_Keys::U:
-      break;
-    case KeypadS_Keys::R:
-      break;
-    }
-  }
-}
 KeypadS_Keys CheckBtn(int val)
 {
   if (val > Val_AVE_R)
@@ -85,21 +96,40 @@ KeypadS_Keys CheckBtn(int val)
     return KeypadS_Keys::Sel;
   return KeypadS_Keys::No;
 }
+
+//AutoSend
 void BIDSCtrlAS()
 {
-  if (IsASMode != IsASModeRec && !IsASMode)
+  if (IsASMode != IsASModeRec) //Turn to Other Mode
   {
-    RmvASSetting(ModeNum);
+    if (IsASMode) //Turn to AS Mode from CR Mode
+      AddASSetting(ModeNum);
+    else //Prepare for Turning to CR Mode
+      RmvASSetting(ModeNum);
     return;
   }
+
+  if (ModeNum == ModeRec)
+    return;
 }
+
+//Call-Response
 void BIDSCtrlCR()
 {
   if (IsASMode)
     return;
 }
-void RmvASSetting(BIDSEls RmvEls)
+
+void AddASSetting(BIDSEls Els)
 {
+}
+void RmvASSetting(BIDSEls Els)
+{
+}
+bool GetTypeAndDNum(BIDSEls bels, char *c, int *num)
+{
+  if (bels == BIDSEls::None || bels > BIDSEls::CTRL_BTN)
+    return false;
 }
 void ModeDisp()
 {
@@ -181,7 +211,7 @@ void ValuePrinterI(int v1, double v2)
 {
   char c[6];
 
-  snprintf(c, 6, "%d", v1);
+  snprintf(c, 6, "%6d", v1);
 
   lcdPrinter(10, 0, c);
 }
@@ -189,7 +219,7 @@ void ValuePrinterF(int v1, double v2)
 {
   char c[6];
 
-  snprintf(c, 6, "%ld", v2);
+  LD2CA(c, 0, 6, 1, v2);
 
   lcdPrinter(10, 0, c);
 }
@@ -238,9 +268,4 @@ void lcdPrinter(int c, int r, String s)
 {
   lcd.setCursor(c, r);
   lcd.print(s);
-}
-void ZeroFill(char *c, int len)
-{
-  for (int i = 0; i < len; i++)
-    c[i] = 0;
 }
