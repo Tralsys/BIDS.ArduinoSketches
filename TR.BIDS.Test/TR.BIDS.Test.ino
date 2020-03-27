@@ -5,7 +5,8 @@
 //This sketch needs Arduino Keypad Shield.
 //****************************************
 
-#include "TR.BIDS.libs.h"
+#include <TR.BIDS.libs.h>
+#include <TR.BIDS.defs.h>
 #include <Arduino.h>
 #include <stdio.h>
 #include <LiquidCrystal.h>
@@ -27,7 +28,7 @@ void setup()
   lcd.clear();
   lcdPrinter(__FILE__);
   lcdPrinter(0, 1, "init...");
-  hs.begin(230400);
+  hs.begin(BIDS_BAUDRATE);
   while (!hs)
     delay(1);
   lcdPrinter(0, 1, "serial began");
@@ -44,7 +45,7 @@ void loop()
   ModeRec = ModeNum;
   IsASModeRec = IsASMode;
 }
-const int Threshold_Zero = 10;
+
 KeypadS_Keys KeyStateRec = KeypadS_Keys::No;
 void CheckBTN()
 {
@@ -74,14 +75,10 @@ void CheckBTN()
       break;
     }
   }
-
   KeyStateRec = CurKeyState;
 }
-const int Val_AVE_Sel = 0;
-const int Val_AVE_L = 0;
-const int Val_AVE_D = 0;
-const int Val_AVE_U = 0;
-const int Val_AVE_R = 0;
+
+//Check which button is pushed
 KeypadS_Keys CheckBtn(int val)
 {
   if (val > Val_AVE_R)
@@ -111,6 +108,10 @@ void BIDSCtrlAS()
 
   if (ModeNum == ModeRec)
     return;
+
+  bool NoASCMD;
+  if (IsASMode)
+    bids.ASDataCheck(&NoASCMD);
 }
 
 //Call-Response
@@ -122,18 +123,44 @@ void BIDSCtrlCR()
 
 void AddASSetting(BIDSEls Els)
 {
+  char DTyp = 0;
+  int DNum = 0;
+  bool IsIntD = false;
+  if (GetTypeAndDNum(Els, &DTyp, &DNum, &IsIntD))
+    ErrorLED(TR_BIDS_TEST_ERRORS::AddASSetting_DTypDNum_404);
+
+  if (bids.AddAutoSend(DTyp, DNum, IsIntD ? ValuePrinterI : ValuePrinterF))
+    ErrorLED(TR_BIDS_TEST_ERRORS::AddASSetting_AddAS_Failed);
 }
 void RmvASSetting(BIDSEls Els)
 {
+  char DTyp = 0;
+  int DNum = 0;
+  bool IsIntD = false;
+  if (GetTypeAndDNum(Els, &DTyp, &DNum, &IsIntD))
+    ErrorLED(TR_BIDS_TEST_ERRORS::AddASSetting_DTypDNum_404);
+
+  if (bids.RmvAutoSend(DTyp, DNum, IsIntD ? ValuePrinterI : ValuePrinterF))
+    ErrorLED(TR_BIDS_TEST_ERRORS::RmvASSetting_RmvAS_Failed);
 }
-bool GetTypeAndDNum(BIDSEls bels, char *c, int *num)
+bool GetTypeAndDNum(BIDSEls bels, char *c, int *num, bool *IsINTData)
 {
   if (bels == BIDSEls::None || bels > BIDSEls::CTRL_BTN)
     return false;
+  switch (bels)
+  {
+  case BIDSEls::BSMD_DOOR:
+    *c = DTYPE_DOOR;
+    *num = 0;
+    *IsINTData = true;
+    break;
+  }
 }
+
+//print the current mode name to LCD
 void ModeDisp()
 {
-  if (ModeNum == ModeRec)
+  if (ModeNum == ModeRec) //If it is not changed, ModeName Change is unneeded.
     return;
 
   switch (ModeNum)
@@ -207,6 +234,7 @@ void ModeDisp()
   }
 }
 
+//Integer Number print to LCD
 void ValuePrinterI(int v1, double v2)
 {
   char c[6];
@@ -215,6 +243,7 @@ void ValuePrinterI(int v1, double v2)
 
   lcdPrinter(10, 0, c);
 }
+//Floating Number print to LCD
 void ValuePrinterF(int v1, double v2)
 {
   char c[6];
@@ -224,7 +253,7 @@ void ValuePrinterF(int v1, double v2)
   lcdPrinter(10, 0, c);
 }
 
-const int LED_DELAY_TIME = 100;
+//Print ERROR Msg
 void ErrorLED(unsigned char ec)
 {
   lcd.clear();
@@ -254,6 +283,11 @@ void ErrorLED(unsigned char ec)
       delay(LED_DELAY_TIME);
     }
   }
+}
+//print Error msg
+void ErrorLED(TR_BIDS_TEST_ERRORS ec)
+{
+  ErrorLED((unsigned char)ec);
 }
 void lcdPrinter(int c, int r, const char *s)
 {

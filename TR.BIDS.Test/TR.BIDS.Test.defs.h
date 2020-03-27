@@ -56,3 +56,21 @@ enum KeypadS_Keys
   U,
   R
 };
+
+#define BIDS_BAUDRATE 115200
+const int Threshold_Zero = 10;
+const int Val_AVE_Sel = 0;
+const int Val_AVE_L = 0;
+const int Val_AVE_D = 0;
+const int Val_AVE_U = 0;
+const int Val_AVE_R = 0;
+const int LED_DELAY_TIME = 100;
+
+enum TR_BIDS_TEST_ERRORS
+{
+  UNKNOWN_ERROR,
+  AddASSetting_DTypDNum_404,
+  AddASSetting_AddAS_Failed,
+  RmvASSetting_DTypDNum_404,
+  RmvASSetting_RmvAS_Failed,
+}
