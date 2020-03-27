@@ -1,38 +1,25 @@
 //TR.BIDS.PresServo.ino
 //Copyright 2020 Tetsu Otter
 //Under the MIT License
-#include "TR.BIDS.libs.h"
-#include "TR.BIDS.defs.h"
+#include <TR.BIDS.libs.h>
+#include <TR.BIDS.defs.h>
 #include <Servo.h>
-
-#define TRUE 1
-#define FALSE 0
-
-#define DEBUG
-
-#define USING_DNUM_1 DNUM_ELAPD_BC_PRES
-#define USING_DNUM_2 DNUM_ELAPD_MR_PRES
-
-#define SERVO_PIN_1 8
-#define SERVO_PIN_2 9
-
-const double Deg_Per_kPa1 = 1 / 6.4;
-const double Deg_Per_kPa2 = Deg_Per_kPa1;
-
-#define ENABLE_THRESHOLD1 TRUE
-const double Threshold1_Deg = 0.5;
-
-#define ENABLE_THRESHOLD2 TRUE
-const double Threshold2_Deg = 0.5;
-
-#define THRESHOLD_ENABLED ((ENABLE_THRESHOLD1 == TRUE) || (ENABLE_THRESHOLD2 == TRUE))
+#include "TR.BIDS.PresServo.h"
 
 BIDS bids = BIDS(&Serial);
+#ifdef SERVO_PIN_1
 Servo servo1;
+#endif
+#ifdef SERVO_PIN_2
 Servo servo2;
+#endif
 
 void setup()
 {
+#ifdef DEBUG_SERVO
+  DebugServo();
+#endif
+
   Serial.begin(115200); //BaudRate 115200
   while (!Serial)
     ; //for leonardo etc.
@@ -41,11 +28,15 @@ void setup()
   Serial.println("TR.BIDS.PresServo.ino DEBUG_MODE");
   delay(1000);
 #endif
-  servo1.attach(SERVO_PIN_1);
-  servo2.attach(SERVO_PIN_2);
 
+#ifdef SERVO_PIN_1
+  servo1.attach(SERVO_PIN_1);
   bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_1, DriveServo1);
+#endif
+#ifdef SERVO_PIN_2
+  servo2.attach(SERVO_PIN_2);
   bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_2, DriveServo2);
+#endif
 }
 void loop()
 {
@@ -60,8 +51,8 @@ void loop()
   }
 }
 
+#ifdef SERVO_PIN_1
 double Servo1DegRec = -10;
-double Servo2DegRec = -10;
 void DriveServo1(int iv, double dv)
 {
   double SvDeg = dv * Deg_Per_kPa1; //Degree Calc
@@ -75,10 +66,13 @@ void DriveServo1(int iv, double dv)
     return;
 #endif
 
-  servo1.write(SvDeg); //Drive Servo
-  Servo1DegRec = SvDeg;       //Record Current Position
+  servo1.write(SvDeg);  //Drive Servo
+  Servo1DegRec = SvDeg; //Record Current Position
 }
+#endif
 
+#ifdef SERVO_PIN_2
+double Servo2DegRec = -10;
 void DriveServo2(int iv, double dv)
 {
   double SvDeg = dv * Deg_Per_kPa2; //Degree Calc
@@ -92,9 +86,10 @@ void DriveServo2(int iv, double dv)
     return;
 #endif
 
-  servo2.write(SvDeg); //Drive Servo
-  Servo1DegRec = SvDeg;       //Record Current Position
+  servo2.write(SvDeg);  //Drive Servo
+  Servo1DegRec = SvDeg; //Record Current Position
 }
+#endif
 
 #ifdef DEBUG
 void DSDBG(int ServoNum, int iv, double dv, double SvDeg, double DegRec, double Threshold, bool ThresholdEnabled)
@@ -132,5 +127,58 @@ void DSDBG(int ServoNum, int iv, double dv, double SvDeg, double DegRec, double 
 bool NeedToDrive(double CurrentDeg, double DegRec, double Threshold_Deg)
 {
   return (CurrentDeg < (DegRec - Threshold_Deg) || (DegRec + Threshold_Deg) < CurrentDeg);
+}
+#endif
+
+#ifdef DEBUG_SERVO
+void DebugServo()
+{
+
+#ifdef SERVO_PIN_1
+  servo1.attach(SERVO_PIN_1);
+  servo1.write(90);
+  delay(1000);
+  servo1.write(0);
+#endif
+#ifdef SERVO_PIN_2
+  servo2.attach(SERVO_PIN_2);
+  servo2.write(90);
+  delay(1000);
+  servo2.write(0);
+#endif
+
+#ifdef DEBUG
+  Serial.begin(115200);
+  while (!Serial)
+    ;
+#endif
+  delay(1000);
+  while (true)
+  {
+#ifdef SERVO_PIN_1
+    for (int i = 0; i >= 1000; i += DEBUG_SERVO_STEP)
+    {
+      DriveServo1(i, (double)i);
+      delay(DEBUG_SERVO_INTERVAL);
+    }
+    for (int i = 1000; i >= 1000; i -= DEBUG_SERVO_STEP)
+    {
+      DriveServo1(i, (double)i);
+      delay(DEBUG_SERVO_INTERVAL);
+    }
+#endif
+#ifdef SERVO_PIN_2
+    for (int i = 0; i <= 1000; i += DEBUG_SERVO_STEP)
+    {
+      DriveServo2(i, (double)i);
+      delay(DEBUG_SERVO_INTERVAL);
+    }
+    for (int i = 1000; i >= 0; i -= DEBUG_SERVO_STEP)
+    {
+      DriveServo2(i, (double)i);
+      delay(DEBUG_SERVO_INTERVAL);
+    }
+#endif
+  }
 }
 #endif
