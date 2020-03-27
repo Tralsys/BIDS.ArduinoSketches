@@ -31,11 +31,13 @@ void setup()
 
 #ifdef SERVO_PIN_1
   servo1.attach(SERVO_PIN_1);
-  bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_1, DriveServo1);
+  if (bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_1, DriveServo1))
+    Serial.println("Servo1 AddAS Error");
 #endif
 #ifdef SERVO_PIN_2
   servo2.attach(SERVO_PIN_2);
-  bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_2, DriveServo2);
+  if (bids.AddAutoSend(DTYPE_ELAPD, USING_DNUM_2, DriveServo2))
+    Serial.println("Servo2 AddAS Error");
 #endif
 }
 void loop()
@@ -87,7 +89,7 @@ void DriveServo2(int iv, double dv)
 #endif
 
   servo2.write(SvDeg);  //Drive Servo
-  Servo1DegRec = SvDeg; //Record Current Position
+  Servo2DegRec = SvDeg; //Record Current Position
 }
 #endif
 
@@ -156,12 +158,12 @@ void DebugServo()
   while (true)
   {
 #ifdef SERVO_PIN_1
-    for (int i = 0; i >= 1000; i += DEBUG_SERVO_STEP)
+    for (int i = 0; i <= 1000; i += DEBUG_SERVO_STEP)
     {
       DriveServo1(i, (double)i);
       delay(DEBUG_SERVO_INTERVAL);
     }
-    for (int i = 1000; i >= 1000; i -= DEBUG_SERVO_STEP)
+    for (int i = 1000; i >= 0; i -= DEBUG_SERVO_STEP)
     {
       DriveServo1(i, (double)i);
       delay(DEBUG_SERVO_INTERVAL);

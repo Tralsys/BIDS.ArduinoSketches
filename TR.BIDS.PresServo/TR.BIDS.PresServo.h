@@ -4,7 +4,7 @@
 #define TRUE 1
 #define FALSE 0
 
-#define DEBUG_SERVO
+//#define DEBUG_SERVO
 #define DEBUG_SERVO_STEP 5
 #define DEBUG_SERVO_INTERVAL 100
 
