@@ -28,8 +28,8 @@ bool BIDS::AddAutoSend(char type, int data_num, AS_OnDataGot act)
     return false;
   if (Actions_count >= Actions_MAX)
     return false;
-  if (CmdSenderI(("TRA" + String(type) + String(data_num)).c_str()) != 0)
-    return false;
+
+  CmdSenderF(("TRA" + String(type) + String(data_num)).c_str());
 
   int Act_num = Actions_count++;
   ASActions[Act_num].type = type;
