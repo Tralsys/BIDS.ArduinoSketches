@@ -84,7 +84,7 @@ bool BIDS::ASDataCheck(bool *NonASCMDGot)
   if (len <= 0)
     return false;
 
-  if (len <= 4 || LastCMD[0] != 'T' || LastCMD[1] != 'R' || LastCMD[2] != 'I')
+  if (len <= 4 || LastCMD[0] != 'T' || LastCMD[1] != 'R' || !(LastCMD[2] == 'I' || LastCMD[2] == 'A'))
   {
     *NonASCMDGot = true;
     return false;
